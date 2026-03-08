@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DayByDay – Engineering Resource Management</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+:root {
+  --bg-0: #0a0f1a;
+  --bg-1: #0f172a;
+  --bg-2: #1e293b;
+  --bg-3: #2d3748;
+  --border: #334155;
+  --border-2: #475569;
+  --text-1: #f9fafb;
+  --text-2: #e2e8f0;
+  --text-3: #94a3b8;
+  --text-4: #64748b;
+  --blue: #3b82f6;
+  --blue-dark: #2563eb;
+  --blue-light: #60a5fa;
+  --purple: #8b5cf6;
+  --green: #10b981;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --l1: #3b82f6;
+  --l2: #8b5cf6;
+  --l3: #10b981;
+  --sidebar-w: 220px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg-0); color: var(--text-1); font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 14px; overflow: hidden; }
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; font-size: 14px; border: none; outline: none; }
+input, select, textarea { font-family: inherit; font-size: 14px; outline: none; }
+
+/* Layout */
+#app { display: flex; height: 100vh; }
+
+/* Sidebar */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--bg-1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#sidebar-logo {
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#sidebar-logo .logo-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+#sidebar-logo .logo-text { font-size: 16px; font-weight: 700; color: var(--text-1); }
+#sidebar-logo .logo-sub { font-size: 10px; color: var(--text-4); letter-spacing: 0.5px; }
+
+#sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-4);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 12px 16px 4px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 0;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  user-select: none;
+}
+.nav-item:hover { background: var(--bg-2); color: var(--text-2); }
+.nav-item.active { background: rgba(59,130,246,0.12); color: var(--blue-light); border-left-color: var(--blue); }
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+#sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+}
+#peer-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-4);
+}
+#peer-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-4);
+  flex-shrink: 0;
+}
+#peer-dot.connected { background: var(--green); }
+#peer-dot.error { background: var(--red); }
+
+/* Main */
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Header */
+#header {
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+#header-title { font-size: 18px; font-weight: 600; color: var(--text-1); }
+#header-actions { display: flex; gap: 8px; align-items: center; }
+
+/* Content */
+#content { flex: 1; overflow-y: auto; padding: 24px; background: var(--bg-0); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: var(--blue-dark); }
+.btn-secondary { background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border-2); }
+.btn-secondary:hover { background: var(--bg-2); border-color: var(--blue); color: var(--text-1); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-ghost { background: transparent; color: var(--text-3); }
+.btn-ghost:hover { background: var(--bg-3); color: var(--text-1); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 6px; border-radius: 6px; }
+
+/* Cards */
+.card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.card-sm { padding: 14px 16px; }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stat-label { font-size: 12px; color: var(--text-4); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 32px; font-weight: 700; color: var(--text-1); line-height: 1; }
+.stat-sub { font-size: 12px; color: var(--text-3); }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-l1 { background: rgba(59,130,246,0.18); color: var(--l1); }
+.badge-l2 { background: rgba(139,92,246,0.18); color: var(--l2); }
+.badge-l3 { background: rgba(16,185,129,0.18); color: var(--l3); }
+.badge-planning { background: rgba(100,116,139,0.2); color: var(--text-3); }
+.badge-active { background: rgba(16,185,129,0.18); color: var(--green); }
+.badge-completed { background: rgba(59,130,246,0.18); color: var(--blue); }
+.badge-on-hold { background: rgba(245,158,11,0.18); color: var(--amber); }
+
+/* Utilization bar */
+.util-bar-wrap { height: 6px; background: var(--bg-3); border-radius: 3px; overflow: hidden; }
+.util-bar { height: 100%; border-radius: 3px; transition: width 0.3s; }
+.util-green { background: var(--green); }
+.util-amber { background: var(--amber); }
+.util-red { background: var(--red); }
+
+/* Initiative tree */
+.tree-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.tree-item-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.tree-item-header:hover { background: var(--bg-3); }
+.tree-toggle { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; color: var(--text-4); flex-shrink: 0; transition: transform 0.2s; }
+.tree-toggle.open { transform: rotate(90deg); }
+.tree-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.tree-item-name { font-weight: 600; flex: 1; color: var(--text-1); }
+.tree-item-meta { display: flex; gap: 8px; align-items: center; }
+.tree-children { padding: 0 0 8px 32px; }
+.tree-l2 .tree-item-header { padding-left: 12px; }
+.tree-l3 .tree-item-header { padding-left: 12px; }
+
+/* Engineer grid */
+.eng-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.eng-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.eng-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.eng-info { display: flex; align-items: center; gap: 12px; }
+.eng-name { font-weight: 600; color: var(--text-1); }
+.eng-role { font-size: 12px; color: var(--text-3); }
+.eng-actions { display: flex; gap: 6px; margin-top: auto; }
+
+/* Allocation list */
+.alloc-list { display: flex; flex-direction: column; gap: 8px; }
+.alloc-item {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.alloc-eng { font-weight: 600; color: var(--text-1); min-width: 140px; }
+.alloc-init { color: var(--text-2); min-width: 160px; }
+.alloc-dates { font-size: 12px; color: var(--text-3); min-width: 160px; }
+.alloc-pct {
+  font-weight: 700;
+  font-size: 16px;
+  min-width: 48px;
+  text-align: right;
+}
+.alloc-actions { margin-left: auto; display: flex; gap: 6px; }
+
+/* Filters */
+.filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-select {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-2);
+  padding: 7px 12px;
+  appearance: none;
+  cursor: pointer;
+}
+.filter-select:focus { border-color: var(--blue); }
+.search-input {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-2);
+  padding: 7px 12px;
+  min-width: 200px;
+}
+.search-input::placeholder { color: var(--text-4); }
+.search-input:focus { border-color: var(--blue); }
+
+/* Gantt */
+#gantt-svg { display: block; }
+.gantt-bar { cursor: pointer; rx: 3; ry: 3; }
+.gantt-bar:hover { opacity: 0.85; }
+
+/* Sync & Export */
+.peer-id-box {
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: monospace;
+  font-size: 14px;
+  color: var(--blue-light);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.15s;
+  word-break: break-all;
+}
+.peer-id-box:hover { border-color: var(--blue); }
+.peers-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.peer-item {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.peer-item-id { font-family: monospace; font-size: 12px; color: var(--text-2); flex: 1; }
+
+/* Modal */
+#modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+#modal-overlay.hidden { display: none; }
+#modal-box {
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-header {
+  padding: 20px 24px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; background: var(--bg-2);
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  z-index: 1;
+}
+.modal-title { font-size: 16px; font-weight: 700; }
+.modal-close { background: transparent; color: var(--text-3); padding: 4px; border-radius: 4px; font-size: 20px; line-height: 1; }
+.modal-close:hover { background: var(--bg-3); color: var(--text-1); }
+.modal-body { padding: 20px 24px; }
+.modal-footer { padding: 0 24px 20px; display: flex; gap: 8px; justify-content: flex-end; }
+.form-row { margin-bottom: 16px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-input {
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-1);
+  padding: 9px 12px;
+  transition: border-color 0.15s;
+}
+.form-input:focus { border-color: var(--blue); }
+.form-input.error { border-color: var(--red); }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.form-error { font-size: 11px; color: var(--red); margin-top: 4px; }
+
+/* Toast */
+#toast-container {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  display: flex; flex-direction: column; gap: 8px;
+  z-index: 2000;
+  pointer-events: none;
+}
+.toast {
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px;
+  min-width: 240px;
+  max-width: 360px;
+  pointer-events: auto;
+  animation: toastIn 0.25s ease;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.toast-success { border-left: 3px solid var(--green); }
+.toast-error { border-left: 3px solid var(--red); }
+.toast-info { border-left: 3px solid var(--blue); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-6px); } }
+
+/* Section headers */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-size: 16px; font-weight: 600; color: var(--text-1); }
+.section-sub { font-size: 13px; color: var(--text-3); margin-top: 2px; }
+
+/* Dividers */
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-4);
+}
+.empty-state svg { margin: 0 auto 12px; display: block; opacity: 0.4; }
+.empty-state-text { font-size: 15px; color: var(--text-3); }
+.empty-state-sub { font-size: 13px; color: var(--text-4); margin-top: 6px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-4); }
+
+/* Date range controls for gantt */
+.date-controls { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.date-controls label { font-size: 12px; color: var(--text-3); }
+
+/* Gantt container */
+.gantt-container {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: auto;
+}
+
+/* Section in sync page */
+.sync-section { margin-bottom: 28px; }
+.sync-section-title { font-size: 14px; font-weight: 600; color: var(--text-2); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.connect-row { display: flex; gap: 8px; }
+.connect-row .form-input { flex: 1; }
+
+/* Grid 2 */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <nav id="sidebar">
+    <div id="sidebar-logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">DayByDay</div>
+        <div class="logo-sub">(Re:Vet) Resource Manager</div>
+      </div>
+    </div>
+    <div id="sidebar-nav"></div>
+    <div id="sidebar-footer">
+      <div id="peer-status">
+        <div id="peer-dot"></div>
+        <span id="peer-status-text">Initializing…</span>
+      </div>
+    </div>
+  </nav>
+  <div id="main">
+    <div id="header">
+      <div id="header-title">Dashboard</div>
+      <div id="header-actions"></div>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+<div id="modal-overlay" class="hidden">
+  <div id="modal-box"></div>
+</div>
+<div id="toast-container"></div>
+
+<script>
+(function() {
+'use strict';
+
+// ─── Icons ───────────────────────────────────────────────────────────────────
+const ICONS = {
+  dashboard: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`,
+  initiatives: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
+  engineers: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  allocations: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
+  tracker: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+  sync: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`,
+  chevron: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`,
+  copy: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+  edit: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  trash: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+  plus: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  download: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  upload: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+  disconnect: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+};
+
+// ─── DB ──────────────────────────────────────────────────────────────────────
+const DB = (() => {
+  let db = null;
+  const DB_NAME = 'daybyday';
+  const DB_VERSION = 1;
+  const STORES = ['initiatives', 'engineers', 'allocations'];
+
+  async function open() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = e => {
+        const d = e.target.result;
+        STORES.forEach(s => {
+          if (!d.objectStoreNames.contains(s)) {
+            d.createObjectStore(s, { keyPath: 'id' });
+          }
+        });
+      };
+      req.onsuccess = e => { db = e.target.result; resolve(db); };
+      req.onerror = e => reject(e.target.error);
+    });
+  }
+
+  function tx(store, mode = 'readonly') {
+    return db.transaction(store, mode).objectStore(store);
+  }
+
+  async function getAll(store) {
+    return new Promise((res, rej) => {
+      const req = tx(store).getAll();
+      req.onsuccess = e => res(e.target.result);
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  async function put(store, item) {
+    return new Promise((res, rej) => {
+      const req = tx(store, 'readwrite').put(item);
+      req.onsuccess = () => res(item);
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  async function del(store, id) {
+    return new Promise((res, rej) => {
+      const req = tx(store, 'readwrite').delete(id);
+      req.onsuccess = () => res();
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  async function clear(store) {
+    return new Promise((res, rej) => {
+      const req = tx(store, 'readwrite').clear();
+      req.onsuccess = () => res();
+      req.onerror = e => rej(e.target.error);
+    });
+  }
+
+  async function bulkPut(store, items) {
+    return new Promise((res, rej) => {
+      const t = db.transaction(store, 'readwrite');
+      const s = t.objectStore(store);
+      items.forEach(item => s.put(item));
+      t.oncomplete = () => res();
+      t.onerror = e => rej(e.target.error);
+    });
+  }
+
+  return { open, getAll, put, del, clear, bulkPut };
+})();
+
+// ─── State ───────────────────────────────────────────────────────────────────
+const State = (() => {
+  const data = {
+    initiatives: [],
+    engineers: [],
+    allocations: [],
+  };
+  const listeners = [];
+
+  function get() { return data; }
+
+  function getInitiatives() { return data.initiatives; }
+  function getEngineers() { return data.engineers; }
+  function getAllocations() { return data.allocations; }
+
+  async function load() {
+    data.initiatives = await DB.getAll('initiatives');
+    data.engineers = await DB.getAll('engineers');
+    data.allocations = await DB.getAll('allocations');
+  }
+
+  async function saveInitiative(item) {
+    const now = new Date().toISOString();
+    const existing = data.initiatives.find(i => i.id === item.id);
+    if (existing) {
+      Object.assign(existing, item, { updatedAt: now });
+      await DB.put('initiatives', existing);
+      return existing;
+    } else {
+      const newItem = { ...item, createdAt: now, updatedAt: now };
+      data.initiatives.push(newItem);
+      await DB.put('initiatives', newItem);
+      return newItem;
+    }
+  }
+
+  async function deleteInitiative(id) {
+    data.initiatives = data.initiatives.filter(i => i.id !== id);
+    data.allocations = data.allocations.filter(a => a.initiativeId !== id);
+    await DB.del('initiatives', id);
+    // cascadeDelete allocations
+    const toRemove = data.allocations.filter(a => a.initiativeId === id);
+    for (const a of toRemove) await DB.del('allocations', a.id);
+  }
+
+  async function saveEngineer(item) {
+    const now = new Date().toISOString();
+    const existing = data.engineers.find(e => e.id === item.id);
+    if (existing) {
+      Object.assign(existing, item, { updatedAt: now });
+      await DB.put('engineers', existing);
+      return existing;
+    } else {
+      const newItem = { ...item, createdAt: now, updatedAt: now };
+      data.engineers.push(newItem);
+      await DB.put('engineers', newItem);
+      return newItem;
+    }
+  }
+
+  async function deleteEngineer(id) {
+    data.engineers = data.engineers.filter(e => e.id !== id);
+    const toRemove = data.allocations.filter(a => a.engineerId === id);
+    data.allocations = data.allocations.filter(a => a.engineerId !== id);
+    for (const a of toRemove) await DB.del('allocations', a.id);
+    await DB.del('engineers', id);
+  }
+
+  async function saveAllocation(item) {
+    const now = new Date().toISOString();
+    const existing = data.allocations.find(a => a.id === item.id);
+    if (existing) {
+      Object.assign(existing, item, { updatedAt: now });
+      await DB.put('allocations', existing);
+      return existing;
+    } else {
+      const newItem = { ...item, createdAt: now, updatedAt: now };
+      data.allocations.push(newItem);
+      await DB.put('allocations', newItem);
+      return newItem;
+    }
+  }
+
+  async function deleteAllocation(id) {
+    data.allocations = data.allocations.filter(a => a.id !== id);
+    await DB.del('allocations', id);
+  }
+
+  // Merge incoming data (last-write-wins by updatedAt)
+  async function mergeData(incoming) {
+    const stores = ['initiatives', 'engineers', 'allocations'];
+    for (const store of stores) {
+      if (!incoming[store]) continue;
+      for (const inItem of incoming[store]) {
+        const existing = data[store].find(i => i.id === inItem.id);
+        if (!existing || new Date(inItem.updatedAt) > new Date(existing.updatedAt)) {
+          if (existing) Object.assign(existing, inItem);
+          else data[store].push(inItem);
+          await DB.put(store, inItem);
+        }
+      }
+    }
+  }
+
+  function getEngineerUtilization(engineerId, atDate) {
+    const date = atDate || new Date().toISOString().split('T')[0];
+    return data.allocations
+      .filter(a => a.engineerId === engineerId && a.startDate <= date && a.endDate >= date)
+      .reduce((sum, a) => sum + (a.percentage || 0), 0);
+  }
+
+  return {
+    get, load,
+    getInitiatives, getEngineers, getAllocations,
+    saveInitiative, deleteInitiative,
+    saveEngineer, deleteEngineer,
+    saveAllocation, deleteAllocation,
+    mergeData,
+    getEngineerUtilization,
+  };
+})();
+
+// ─── Utils ───────────────────────────────────────────────────────────────────
+function uuid() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function avatarColor(name) {
+  const colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899','#84cc16'];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+  return colors[h % colors.length];
+}
+
+function initials(name) {
+  return name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function utilClass(pct) {
+  if (pct > 100) return 'util-red';
+  if (pct >= 80) return 'util-amber';
+  return 'util-green';
+}
+
+function utilTextColor(pct) {
+  if (pct > 100) return 'var(--red)';
+  if (pct >= 80) return 'var(--amber)';
+  return 'var(--green)';
+}
+
+function levelColor(level) {
+  if (level === 'L1') return 'var(--l1)';
+  if (level === 'L2') return 'var(--l2)';
+  if (level === 'L3') return 'var(--l3)';
+  return 'var(--text-3)';
+}
+
+function statusBadge(status) {
+  const map = { planning: 'badge-planning', active: 'badge-active', completed: 'badge-completed', 'on-hold': 'badge-on-hold' };
+  return `<span class="badge ${map[status] || ''}">${status || ''}</span>`;
+}
+
+function levelBadge(level) {
+  const map = { L1: 'badge-l1', L2: 'badge-l2', L3: 'badge-l3' };
+  return `<span class="badge ${map[level] || ''}">${level || ''}</span>`;
+}
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+const Toast = (() => {
+  function show(msg, type = 'info', duration = 3500) {
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.innerHTML = `<span>${msg}</span>`;
+    const container = document.getElementById('toast-container');
+    container.appendChild(el);
+    setTimeout(() => {
+      el.style.animation = 'toastOut 0.25s ease forwards';
+      setTimeout(() => el.remove(), 260);
+    }, duration);
+  }
+  return { show };
+})();
+
+// ─── Modal ───────────────────────────────────────────────────────────────────
+const Modal = (() => {
+  let currentResolve = null;
+
+  function open(html, title) {
+    const overlay = document.getElementById('modal-overlay');
+    const box = document.getElementById('modal-box');
+    box.innerHTML = `
+      <div class="modal-header">
+        <span class="modal-title">${title}</span>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">${html}</div>
+    `;
+    overlay.classList.remove('hidden');
+    document.getElementById('modal-close-btn').onclick = close;
+    overlay.onclick = e => { if (e.target === overlay) close(); };
+    return box;
+  }
+
+  function close() {
+    document.getElementById('modal-overlay').classList.add('hidden');
+    document.getElementById('modal-box').innerHTML = '';
+    if (currentResolve) { currentResolve(null); currentResolve = null; }
+  }
+
+  function addFooter(html) {
+    const box = document.getElementById('modal-box');
+    const footer = document.createElement('div');
+    footer.className = 'modal-footer';
+    footer.innerHTML = html;
+    box.appendChild(footer);
+    return footer;
+  }
+
+  return { open, close, addFooter };
+})();
+
+// ─── PeerSync ────────────────────────────────────────────────────────────────
+const PeerSync = (() => {
+  let peer = null;
+  let connections = [];
+  let myId = null;
+
+  function getPeerId() {
+    let id = localStorage.getItem('daybyday-peer-id');
+    if (!id) {
+      id = 'dbd-' + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem('daybyday-peer-id', id);
+    }
+    return id;
+  }
+
+  function updateStatus(text, state) {
+    const dot = document.getElementById('peer-dot');
+    const statusText = document.getElementById('peer-status-text');
+    if (dot) {
+      dot.className = state === 'connected' ? 'connected' : state === 'error' ? 'error' : '';
+    }
+    if (statusText) statusText.textContent = text;
+  }
+
+  function broadcast(msg) {
+    const data = JSON.stringify(msg);
+    connections.forEach(conn => {
+      try { conn.send(data); } catch(e) {}
+    });
+  }
+
+  function handleData(raw) {
+    let msg;
+    try { msg = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(e) { return; }
+    if (msg.type === 'SNAPSHOT') {
+      State.mergeData(msg.data).then(() => {
+        App.refreshView();
+        Toast.show('Synced data from peer', 'success');
+      });
+    } else if (msg.type === 'CHANGE') {
+      State.mergeData(msg.data).then(() => {
+        App.refreshView();
+      });
+    }
+  }
+
+  function sendSnapshot(conn) {
+    const s = State.get();
+    conn.send(JSON.stringify({
+      type: 'SNAPSHOT',
+      data: {
+        initiatives: s.initiatives,
+        engineers: s.engineers,
+        allocations: s.allocations,
+      }
+    }));
+  }
+
+  function broadcastChange(changed) {
+    broadcast({ type: 'CHANGE', data: changed });
+  }
+
+  function setupConn(conn) {
+    conn.on('open', () => {
+      connections.push(conn);
+      sendSnapshot(conn);
+      updateStatus(`${connections.length} peer(s) connected`, 'connected');
+      if (document.getElementById('peers-list')) renderPeersList();
+    });
+    conn.on('data', handleData);
+    conn.on('close', () => {
+      connections = connections.filter(c => c !== conn);
+      const count = connections.length;
+      updateStatus(count ? `${count} peer(s) connected` : 'Ready', count ? 'connected' : '');
+      if (document.getElementById('peers-list')) renderPeersList();
+    });
+    conn.on('error', err => {
+      connections = connections.filter(c => c !== conn);
+      updateStatus('Peer error', 'error');
+      Toast.show('Peer connection error: ' + err.message, 'error');
+    });
+  }
+
+  function renderPeersList() {
+    const el = document.getElementById('peers-list');
+    if (!el) return;
+    if (connections.length === 0) {
+      el.innerHTML = '<div style="color:var(--text-4);font-size:13px;padding:8px 0;">No peers connected</div>';
+      return;
+    }
+    el.innerHTML = connections.map(conn => `
+      <div class="peer-item">
+        <div id="peer-dot-sm" style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
+        <span class="peer-item-id">${conn.peer}</span>
+        <button class="btn btn-sm btn-ghost btn-icon" onclick="PeerSyncAPI.disconnect('${conn.peer}')" title="Disconnect">${ICONS.disconnect}</button>
+      </div>
+    `).join('');
+  }
+
+  async function init() {
+    myId = getPeerId();
+    updateStatus('Connecting…', '');
+    try {
+      peer = new Peer(myId);
+      peer.on('open', id => {
+        myId = id;
+        localStorage.setItem('daybyday-peer-id', id);
+        updateStatus('Ready', '');
+        // update displayed peer ID
+        const el = document.getElementById('my-peer-id');
+        if (el) el.textContent = id;
+      });
+      peer.on('connection', conn => {
+        setupConn(conn);
+        Toast.show('Peer connected: ' + conn.peer, 'info');
+      });
+      peer.on('error', err => {
+        if (err.type === 'unavailable-id') {
+          // retry with new ID
+          localStorage.removeItem('daybyday-peer-id');
+          myId = getPeerId();
+          peer.destroy();
+          init();
+        } else {
+          updateStatus('Error', 'error');
+        }
+      });
+      peer.on('disconnected', () => {
+        updateStatus('Disconnected', 'error');
+        peer.reconnect();
+      });
+    } catch(e) {
+      updateStatus('PeerJS error', 'error');
+    }
+  }
+
+  function connectTo(peerId) {
+    if (!peer || !peerId) return;
+    const existing = connections.find(c => c.peer === peerId);
+    if (existing) { Toast.show('Already connected to this peer', 'info'); return; }
+    const conn = peer.connect(peerId);
+    setupConn(conn);
+  }
+
+  function disconnectFrom(peerId) {
+    const conn = connections.find(c => c.peer === peerId);
+    if (conn) conn.close();
+  }
+
+  function getMyId() { return myId || getPeerId(); }
+  function getConnections() { return connections; }
+
+  window.PeerSyncAPI = { disconnect: disconnectFrom, renderPeersList };
+
+  return { init, connectTo, disconnectFrom, broadcastChange, getMyId, getConnections, renderPeersList };
+})();
+
+// ─── Sample Data ─────────────────────────────────────────────────────────────
+async function seedData() {
+  const existing = await DB.getAll('initiatives');
+  if (existing.length > 0) return;
+
+  const now = new Date().toISOString();
+  const today = new Date();
+  function daysFromNow(n) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + n);
+    return d.toISOString().split('T')[0];
+  }
+
+  const initiatives = [
+    { id: uuid(), name: 'Platform Modernization', description: 'Modernize core platform infrastructure', level: 'L1', parentId: null, startDate: daysFromNow(-60), endDate: daysFromNow(120), status: 'active', color: '#3b82f6', createdAt: now, updatedAt: now },
+    { id: uuid(), name: 'Data Analytics Overhaul', description: 'Rebuild analytics pipeline', level: 'L1', parentId: null, startDate: daysFromNow(-30), endDate: daysFromNow(90), status: 'active', color: '#8b5cf6', createdAt: now, updatedAt: now },
+    { id: uuid(), name: 'Mobile App Launch', description: 'Launch consumer mobile application', level: 'L1', parentId: null, startDate: daysFromNow(10), endDate: daysFromNow(180), status: 'planning', color: '#10b981', createdAt: now, updatedAt: now },
+  ];
+
+  // L2 under Platform Modernization
+  const l2_1 = { id: uuid(), name: 'API Gateway Redesign', description: 'New API gateway with rate limiting', level: 'L2', parentId: initiatives[0].id, startDate: daysFromNow(-45), endDate: daysFromNow(60), status: 'active', color: '#3b82f6', createdAt: now, updatedAt: now };
+  const l2_2 = { id: uuid(), name: 'Database Migration', description: 'Migrate to distributed DB', level: 'L2', parentId: initiatives[0].id, startDate: daysFromNow(-20), endDate: daysFromNow(80), status: 'active', color: '#3b82f6', createdAt: now, updatedAt: now };
+  // L2 under Data Analytics
+  const l2_3 = { id: uuid(), name: 'Data Warehouse Setup', description: 'Set up new data warehouse', level: 'L2', parentId: initiatives[1].id, startDate: daysFromNow(-30), endDate: daysFromNow(45), status: 'active', color: '#8b5cf6', createdAt: now, updatedAt: now };
+  const l2_4 = { id: uuid(), name: 'BI Dashboard', description: 'Build business intelligence dashboards', level: 'L2', parentId: initiatives[1].id, startDate: daysFromNow(10), endDate: daysFromNow(90), status: 'planning', color: '#8b5cf6', createdAt: now, updatedAt: now };
+
+  // L3 tasks
+  const l3_1 = { id: uuid(), name: 'OAuth2 Integration', description: 'Add OAuth2 to API gateway', level: 'L3', parentId: l2_1.id, startDate: daysFromNow(-30), endDate: daysFromNow(14), status: 'active', color: '#10b981', createdAt: now, updatedAt: now };
+  const l3_2 = { id: uuid(), name: 'Load Balancer Config', description: 'Configure new load balancers', level: 'L3', parentId: l2_1.id, startDate: daysFromNow(10), endDate: daysFromNow(40), status: 'planning', color: '#10b981', createdAt: now, updatedAt: now };
+  const l3_3 = { id: uuid(), name: 'Schema Migration Scripts', description: 'Write DB migration scripts', level: 'L3', parentId: l2_2.id, startDate: daysFromNow(-15), endDate: daysFromNow(30), status: 'active', color: '#10b981', createdAt: now, updatedAt: now };
+
+  const allInitiatives = [initiatives[0], initiatives[1], initiatives[2], l2_1, l2_2, l2_3, l2_4, l3_1, l3_2, l3_3];
+
+  const engineers = [
+    { id: uuid(), name: 'Alice Chen', email: 'alice@company.com', role: 'Senior Engineer', team: 'Platform', createdAt: now, updatedAt: now },
+    { id: uuid(), name: 'Bob Martinez', email: 'bob@company.com', role: 'Staff Engineer', team: 'Data', createdAt: now, updatedAt: now },
+    { id: uuid(), name: 'Carol Johnson', email: 'carol@company.com', role: 'Engineer II', team: 'Platform', createdAt: now, updatedAt: now },
+    { id: uuid(), name: 'David Kim', email: 'david@company.com', role: 'Senior Engineer', team: 'Mobile', createdAt: now, updatedAt: now },
+    { id: uuid(), name: 'Elena Rossi', email: 'elena@company.com', role: 'Principal Engineer', team: 'Data', createdAt: now, updatedAt: now },
+    { id: uuid(), name: 'Frank Liu', email: 'frank@company.com', role: 'Engineer III', team: 'Platform', createdAt: now, updatedAt: now },
+  ];
+
+  const allocations = [
+    { id: uuid(), engineerId: engineers[0].id, initiativeId: l2_1.id, startDate: daysFromNow(-45), endDate: daysFromNow(60), percentage: 60, role: 'Tech Lead', notes: 'Leading API redesign', createdAt: now, updatedAt: now },
+    { id: uuid(), engineerId: engineers[0].id, initiativeId: l3_1.id, startDate: daysFromNow(-30), endDate: daysFromNow(14), percentage: 30, role: 'Developer', notes: '', createdAt: now, updatedAt: now },
+    { id: uuid(), engineerId: engineers[1].id, initiativeId: l2_3.id, startDate: daysFromNow(-30), endDate: daysFromNow(45), percentage: 80, role: 'Tech Lead', notes: 'Leading DW setup', createdAt: now, updatedAt: now },
+    { id: uuid(), engineerId: engineers[2].id, initiativeId: l2_2.id, startDate: daysFromNow(-20), endDate: daysFromNow(80), percentage: 70, role: 'Developer', notes: '', createdAt: now, updatedAt: now },
+    { id: uuid(), engineerId: engineers[2].id, initiativeId: l3_3.id, startDate: daysFromNow(-15), endDate: daysFromNow(30), percentage: 20, role: 'Developer', notes: '', createdAt: now, updatedAt: now },
+    { id: uuid(), engineerId: engineers[3].id, initiativeId: initiatives[2].id, startDate: daysFromNow(10), endDate: daysFromNow(180), percentage: 100, role: 'Lead', notes: 'Mobile launch lead', createdAt: now, updatedAt: now },
+    { id: uuid(), engineerId: engineers[4].id, initiativeId: l2_3.id, startDate: daysFromNow(-30), endDate: daysFromNow(45), percentage: 50, role: 'Architect', notes: '', createdAt: now, updatedAt: now },
+    { id: uuid(), engineerId: engineers[4].id, initiativeId: l2_4.id, startDate: daysFromNow(10), endDate: daysFromNow(90), percentage: 40, role: 'Lead', notes: '', createdAt: now, updatedAt: now },
+    { id: uuid(), engineerId: engineers[5].id, initiativeId: l2_1.id, startDate: daysFromNow(-20), endDate: daysFromNow(60), percentage: 50, role: 'Developer', notes: '', createdAt: now, updatedAt: now },
+    { id: uuid(), engineerId: engineers[5].id, initiativeId: l3_2.id, startDate: daysFromNow(10), endDate: daysFromNow(40), percentage: 40, role: 'Developer', notes: '', createdAt: now, updatedAt: now },
+  ];
+
+  await DB.bulkPut('initiatives', allInitiatives);
+  await DB.bulkPut('engineers', engineers);
+  await DB.bulkPut('allocations', allocations);
+  await State.load();
+}
+
+// ─── Views ───────────────────────────────────────────────────────────────────
+const Views = {};
+
+// Dashboard
+Views.dashboard = function() {
+  const s = State.get();
+  const today = new Date().toISOString().split('T')[0];
+  const activeInits = s.initiatives.filter(i => i.status === 'active');
+  const avgUtil = s.engineers.length ? Math.round(
+    s.engineers.reduce((sum, e) => sum + State.getEngineerUtilization(e.id, today), 0) / s.engineers.length
+  ) : 0;
+
+  let html = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Initiatives</div>
+        <div class="stat-value">${s.initiatives.length}</div>
+        <div class="stat-sub">${activeInits.length} active</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Engineers</div>
+        <div class="stat-value">${s.engineers.length}</div>
+        <div class="stat-sub">across all teams</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Allocations</div>
+        <div class="stat-value">${s.allocations.length}</div>
+        <div class="stat-sub">total records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Utilization</div>
+        <div class="stat-value" style="color:${avgUtil > 100 ? 'var(--red)' : avgUtil >= 80 ? 'var(--amber)' : 'var(--green)'}">${avgUtil}%</div>
+        <div class="stat-sub">team average today</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="section-header"><div class="section-title">Active Initiatives</div></div>
+        <div class="card" style="padding:0;overflow:hidden;">
+  `;
+  if (activeInits.length === 0) {
+    html += `<div class="empty-state"><div class="empty-state-text">No active initiatives</div></div>`;
+  } else {
+    activeInits.slice(0, 8).forEach(ini => {
+      html += `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">
+          <div style="width:4px;height:36px;border-radius:2px;background:${levelColor(ini.level)};flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ini.name}</div>
+            <div style="font-size:12px;color:var(--text-4);margin-top:2px;">${fmtDate(ini.startDate)} – ${fmtDate(ini.endDate)}</div>
+          </div>
+          ${levelBadge(ini.level)}
+        </div>
+      `;
+    });
+  }
+  html += `</div></div>`;
+
+  // Engineer utilization
+  html += `
+      <div>
+        <div class="section-header"><div class="section-title">Engineer Utilization</div></div>
+        <div class="card" style="padding:0;overflow:hidden;">
+  `;
+  if (s.engineers.length === 0) {
+    html += `<div class="empty-state"><div class="empty-state-text">No engineers</div></div>`;
+  } else {
+    s.engineers.forEach(eng => {
+      const util = State.getEngineerUtilization(eng.id, today);
+      const cls = utilClass(util);
+      const barW = Math.min(util, 120);
+      html += `
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="eng-avatar" style="width:28px;height:28px;font-size:11px;background:${avatarColor(eng.name)}">${initials(eng.name)}</div>
+              <span style="font-weight:500;color:var(--text-1);">${eng.name}</span>
+            </div>
+            <span style="font-size:13px;font-weight:600;color:${utilTextColor(util)}">${util}%</span>
+          </div>
+          <div class="util-bar-wrap"><div class="util-bar ${cls}" style="width:${Math.min(barW/1.2, 100)}%"></div></div>
+        </div>
+      `;
+    });
+  }
+  html += `</div></div></div>`;
+  return html;
+};
+
+// Initiatives view
+Views.initiatives = function(filters = {}) {
+  const s = State.get();
+  const lvlFilter = filters.level || '';
+  const stFilter = filters.status || '';
+  const search = (filters.search || '').toLowerCase();
+
+  let filtered = s.initiatives.filter(i => {
+    if (lvlFilter && i.level !== lvlFilter) return false;
+    if (stFilter && i.status !== stFilter) return false;
+    if (search && !i.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  // Build tree
+  const l1s = s.initiatives.filter(i => i.level === 'L1');
+
+  function renderL3(l3) {
+    return `
+      <div class="tree-item tree-l3" style="margin-left:0;margin-bottom:6px;">
+        <div class="tree-item-header" style="padding:10px 12px;">
+          <div style="width:16px;flex-shrink:0;"></div>
+          <div class="tree-color-dot" style="background:${levelColor('L3')}"></div>
+          <div class="tree-item-name" style="font-size:13px;">${l3.name}</div>
+          <div class="tree-item-meta">
+            ${levelBadge(l3.level)}
+            ${statusBadge(l3.status)}
+            <span style="font-size:11px;color:var(--text-4);">${fmtDate(l3.startDate)} – ${fmtDate(l3.endDate)}</span>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="App.editInitiative('${l3.id}')" title="Edit">${ICONS.edit}</button>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="App.deleteInitiative('${l3.id}')" title="Delete" style="color:var(--red)">${ICONS.trash}</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderL2(l2) {
+    const children = s.initiatives.filter(i => i.parentId === l2.id && i.level === 'L3');
+    const expandId = 'tree-' + l2.id;
+    return `
+      <div class="tree-item tree-l2" style="margin-bottom:6px;">
+        <div class="tree-item-header" onclick="toggleTree('${expandId}')">
+          <div class="tree-toggle ${children.length ? '' : 'invisible'}" id="toggle-${expandId}">${ICONS.chevron}</div>
+          <div class="tree-color-dot" style="background:${levelColor('L2')}"></div>
+          <div class="tree-item-name">${l2.name}</div>
+          <div class="tree-item-meta">
+            ${levelBadge(l2.level)}
+            ${statusBadge(l2.status)}
+            <span style="font-size:11px;color:var(--text-4);">${fmtDate(l2.startDate)} – ${fmtDate(l2.endDate)}</span>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();App.editInitiative('${l2.id}')" title="Edit">${ICONS.edit}</button>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();App.deleteInitiative('${l2.id}')" title="Delete" style="color:var(--red)">${ICONS.trash}</button>
+          </div>
+        </div>
+        ${children.length ? `<div class="tree-children" id="${expandId}" style="display:none;">${children.map(renderL3).join('')}</div>` : ''}
+      </div>
+    `;
+  }
+
+  function renderL1(l1) {
+    const l2children = s.initiatives.filter(i => i.parentId === l1.id && i.level === 'L2');
+    const expandId = 'tree-' + l1.id;
+    return `
+      <div class="tree-item" style="margin-bottom:12px;">
+        <div class="tree-item-header" onclick="toggleTree('${expandId}')">
+          <div class="tree-toggle ${l2children.length ? '' : ''}" id="toggle-${expandId}">${ICONS.chevron}</div>
+          <div class="tree-color-dot" style="background:${levelColor('L1')};width:12px;height:12px;"></div>
+          <div class="tree-item-name" style="font-size:15px;">${l1.name}</div>
+          <div class="tree-item-meta">
+            ${levelBadge(l1.level)}
+            ${statusBadge(l1.status)}
+            <span style="font-size:11px;color:var(--text-4);">${fmtDate(l1.startDate)} – ${fmtDate(l1.endDate)}</span>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();App.editInitiative('${l1.id}')" title="Edit">${ICONS.edit}</button>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();App.deleteInitiative('${l1.id}')" title="Delete" style="color:var(--red)">${ICONS.trash}</button>
+          </div>
+        </div>
+        ${l2children.length ? `<div class="tree-children" id="${expandId}">${l2children.map(renderL2).join('')}</div>` : ''}
+      </div>
+    `;
+  }
+
+  const filterHtml = `
+    <div class="filter-bar">
+      <input class="search-input" id="ini-search" type="text" placeholder="Search initiatives…" value="${filters.search || ''}" oninput="App.filterInitiatives()">
+      <select class="filter-select" id="ini-level-filter" onchange="App.filterInitiatives()">
+        <option value="">All Levels</option>
+        <option value="L1" ${lvlFilter==='L1'?'selected':''}>L1</option>
+        <option value="L2" ${lvlFilter==='L2'?'selected':''}>L2</option>
+        <option value="L3" ${lvlFilter==='L3'?'selected':''}>L3</option>
+      </select>
+      <select class="filter-select" id="ini-status-filter" onchange="App.filterInitiatives()">
+        <option value="">All Statuses</option>
+        <option value="planning" ${stFilter==='planning'?'selected':''}>Planning</option>
+        <option value="active" ${stFilter==='active'?'selected':''}>Active</option>
+        <option value="completed" ${stFilter==='completed'?'selected':''}>Completed</option>
+        <option value="on-hold" ${stFilter==='on-hold'?'selected':''}>On Hold</option>
+      </select>
+    </div>
+  `;
+
+  let treeHtml = '';
+  if (lvlFilter || stFilter || search) {
+    // flat list when filtering
+    if (filtered.length === 0) {
+      treeHtml = `<div class="empty-state"><div class="empty-state-text">No initiatives match filters</div></div>`;
+    } else {
+      treeHtml = filtered.map(ini => `
+        <div class="tree-item" style="margin-bottom:8px;">
+          <div class="tree-item-header">
+            <div style="width:16px;"></div>
+            <div class="tree-color-dot" style="background:${levelColor(ini.level)}"></div>
+            <div class="tree-item-name">${ini.name}</div>
+            <div class="tree-item-meta">
+              ${levelBadge(ini.level)}
+              ${statusBadge(ini.status)}
+              <span style="font-size:11px;color:var(--text-4);">${fmtDate(ini.startDate)} – ${fmtDate(ini.endDate)}</span>
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="App.editInitiative('${ini.id}')">${ICONS.edit}</button>
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="App.deleteInitiative('${ini.id}')" style="color:var(--red)">${ICONS.trash}</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  } else {
+    if (l1s.length === 0) {
+      treeHtml = `<div class="empty-state"><div class="empty-state-text">No initiatives yet</div><div class="empty-state-sub">Create your first initiative to get started</div></div>`;
+    } else {
+      treeHtml = l1s.map(renderL1).join('');
+    }
+  }
+
+  return filterHtml + treeHtml;
+};
+
+// Engineers view
+Views.engineers = function() {
+  const s = State.get();
+  const today = new Date().toISOString().split('T')[0];
+
+  if (s.engineers.length === 0) {
+    return `<div class="empty-state"><div class="empty-state-text">No engineers yet</div><div class="empty-state-sub">Add your first team member</div></div>`;
+  }
+
+  return `
+    <div class="eng-grid">
+      ${s.engineers.map(eng => {
+        const util = State.getEngineerUtilization(eng.id, today);
+        const cls = utilClass(util);
+        const activeAllocs = s.allocations.filter(a => a.engineerId === eng.id && a.startDate <= today && a.endDate >= today);
+        return `
+          <div class="eng-card">
+            <div class="eng-info">
+              <div class="eng-avatar" style="background:${avatarColor(eng.name)}">${initials(eng.name)}</div>
+              <div>
+                <div class="eng-name">${eng.name}</div>
+                <div class="eng-role">${eng.role}</div>
+                <div style="font-size:11px;color:var(--text-4);margin-top:2px;">Team: ${eng.team}</div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:12px;color:var(--text-3);">${activeAllocs.length} active allocation${activeAllocs.length !== 1 ? 's' : ''}</span>
+                <span style="font-size:13px;font-weight:600;color:${utilTextColor(util)}">${util}%</span>
+              </div>
+              <div class="util-bar-wrap"><div class="util-bar ${cls}" style="width:${Math.min(util, 100)}%"></div></div>
+            </div>
+            <div style="font-size:11px;color:var(--text-4);">${eng.email}</div>
+            <div class="eng-actions">
+              <button class="btn btn-secondary btn-sm" onclick="App.editEngineer('${eng.id}')">${ICONS.edit} Edit</button>
+              <button class="btn btn-ghost btn-sm" onclick="App.deleteEngineer('${eng.id}')" style="color:var(--red)">${ICONS.trash} Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+};
+
+// Allocations view
+Views.allocations = function(filters = {}) {
+  const s = State.get();
+  const engFilter = filters.engineerId || '';
+  const iniFilter = filters.initiativeId || '';
+
+  let allocs = s.allocations;
+  if (engFilter) allocs = allocs.filter(a => a.engineerId === engFilter);
+  if (iniFilter) allocs = allocs.filter(a => a.initiativeId === iniFilter);
+
+  const filterHtml = `
+    <div class="filter-bar">
+      <select class="filter-select" id="alloc-eng-filter" onchange="App.filterAllocations()">
+        <option value="">All Engineers</option>
+        ${s.engineers.map(e => `<option value="${e.id}" ${engFilter===e.id?'selected':''}>${e.name}</option>`).join('')}
+      </select>
+      <select class="filter-select" id="alloc-ini-filter" onchange="App.filterAllocations()">
+        <option value="">All Initiatives</option>
+        ${s.initiatives.map(i => `<option value="${i.id}" ${iniFilter===i.id?'selected':''}>${i.name}</option>`).join('')}
+      </select>
+    </div>
+  `;
+
+  if (allocs.length === 0) {
+    return filterHtml + `<div class="empty-state"><div class="empty-state-text">No allocations found</div><div class="empty-state-sub">Create allocations to assign engineers to initiatives</div></div>`;
+  }
+
+  const engMap = Object.fromEntries(s.engineers.map(e => [e.id, e]));
+  const iniMap = Object.fromEntries(s.initiatives.map(i => [i.id, i]));
+
+  return filterHtml + `
+    <div class="alloc-list">
+      ${allocs.map(a => {
+        const eng = engMap[a.engineerId];
+        const ini = iniMap[a.initiativeId];
+        const pct = a.percentage || 0;
+        return `
+          <div class="alloc-item">
+            <div style="display:flex;align-items:center;gap:8px;min-width:160px;">
+              ${eng ? `<div class="eng-avatar" style="width:28px;height:28px;font-size:11px;background:${avatarColor(eng.name)}">${initials(eng.name)}</div>` : ''}
+              <div class="alloc-eng">${eng ? eng.name : '(deleted)'}</div>
+            </div>
+            <div>
+              <div class="alloc-init">${ini ? ini.name : '(deleted)'}</div>
+              ${ini ? `<div style="margin-top:2px;">${levelBadge(ini.level)}</div>` : ''}
+            </div>
+            <div class="alloc-dates">${fmtDate(a.startDate)} – ${fmtDate(a.endDate)}</div>
+            <div class="alloc-pct" style="color:${utilTextColor(pct)}">${pct}%</div>
+            ${a.role ? `<div style="font-size:12px;color:var(--text-3);min-width:100px;">${a.role}</div>` : ''}
+            <div class="alloc-actions">
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="App.editAllocation('${a.id}')">${ICONS.edit}</button>
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="App.deleteAllocation('${a.id}')" style="color:var(--red)">${ICONS.trash}</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+};
+
+// Gantt / Tracker view
+Views.tracker = function(ganttState = {}) {
+  const s = State.get();
+  const today = new Date().toISOString().split('T')[0];
+
+  // Default date range
+  const defaultStart = new Date();
+  defaultStart.setDate(defaultStart.getDate() - 30);
+  const defaultEnd = new Date();
+  defaultEnd.setDate(defaultEnd.getDate() + 90);
+
+  const rangeStart = ganttState.start || defaultStart.toISOString().split('T')[0];
+  const rangeEnd = ganttState.end || defaultEnd.toISOString().split('T')[0];
+
+  const dateControls = `
+    <div class="date-controls">
+      <label>From:</label>
+      <input type="date" class="form-input" id="gantt-start" value="${rangeStart}" style="width:160px;" onchange="App.updateGantt()">
+      <label>To:</label>
+      <input type="date" class="form-input" id="gantt-end" value="${rangeEnd}" style="width:160px;" onchange="App.updateGantt()">
+      <button class="btn btn-secondary btn-sm" onclick="App.resetGanttRange()">Reset</button>
+    </div>
+  `;
+
+  const inits = s.initiatives.filter(i => i.startDate && i.endDate);
+  if (inits.length === 0) {
+    return dateControls + `<div class="empty-state"><div class="empty-state-text">No initiatives to display</div></div>`;
+  }
+
+  // SVG Gantt
+  const ROW_H = 36;
+  const LABEL_W = 200;
+  const HEADER_H = 40;
+  const PAD = 8;
+
+  const startMs = new Date(rangeStart).getTime();
+  const endMs = new Date(rangeEnd).getTime();
+  const totalDays = (endMs - startMs) / 86400000;
+  const SVG_W = 900;
+  const CHART_W = SVG_W - LABEL_W;
+  const pxPerDay = CHART_W / totalDays;
+
+  function dateToX(dateStr) {
+    const ms = new Date(dateStr).getTime();
+    return LABEL_W + Math.max(0, (ms - startMs) / 86400000) * pxPerDay;
+  }
+
+  // Generate month labels
+  const monthLabels = [];
+  const cur = new Date(rangeStart);
+  cur.setDate(1);
+  while (cur.getTime() <= endMs) {
+    const x = dateToX(cur.toISOString().split('T')[0]);
+    if (x >= LABEL_W && x <= SVG_W) {
+      monthLabels.push({ x, label: cur.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }) });
+    }
+    cur.setMonth(cur.getMonth() + 1);
+  }
+
+  // Sort: L1 first, then L2, then L3
+  const sorted = [...inits].sort((a, b) => {
+    const lvlOrder = { L1: 0, L2: 1, L3: 2 };
+    if (lvlOrder[a.level] !== lvlOrder[b.level]) return lvlOrder[a.level] - lvlOrder[b.level];
+    return a.name.localeCompare(b.name);
+  });
+
+  const SVG_H = HEADER_H + sorted.length * ROW_H + PAD * 2;
+
+  // Today marker
+  const todayX = dateToX(today);
+  const showToday = todayX >= LABEL_W && todayX <= SVG_W;
+
+  let rowsSvg = '';
+  sorted.forEach((ini, idx) => {
+    const y = HEADER_H + idx * ROW_H;
+    const barY = y + (ROW_H - 20) / 2;
+    const bg = idx % 2 === 0 ? '#0f172a' : '#111827';
+    rowsSvg += `<rect x="0" y="${y}" width="${SVG_W}" height="${ROW_H}" fill="${bg}" opacity="0.4"/>`;
+
+    // Label
+    const indent = ini.level === 'L1' ? 8 : ini.level === 'L2' ? 20 : 32;
+    const fontSize = ini.level === 'L1' ? 13 : ini.level === 'L2' ? 12 : 11;
+    const fontW = ini.level === 'L1' ? 'bold' : 'normal';
+    const maxLabelW = LABEL_W - indent - 8;
+    let displayName = ini.name;
+    if (displayName.length > 22) displayName = displayName.slice(0, 20) + '…';
+    rowsSvg += `<text x="${indent}" y="${y + ROW_H/2 + 1}" font-size="${fontSize}" fill="#e2e8f0" font-weight="${fontW}" dominant-baseline="middle" font-family="system-ui">${displayName}</text>`;
+
+    // Bar
+    const barX1 = Math.max(LABEL_W, dateToX(ini.startDate));
+    const barX2 = Math.min(SVG_W, dateToX(ini.endDate));
+    if (barX2 > barX1) {
+      const barColor = ini.level === 'L1' ? '#3b82f6' : ini.level === 'L2' ? '#8b5cf6' : '#10b981';
+      rowsSvg += `<rect class="gantt-bar" x="${barX1}" y="${barY}" width="${barX2 - barX1}" height="20" rx="3" ry="3" fill="${barColor}" opacity="0.85" title="${ini.name}"/>`;
+
+      // Progress bar (based on today vs date range)
+      if (ini.status === 'active') {
+        const totalW = barX2 - barX1;
+        const progressEnd = Math.min(todayX, barX2);
+        const progressW = Math.max(0, progressEnd - barX1);
+        if (progressW > 0) {
+          rowsSvg += `<rect x="${barX1}" y="${barY}" width="${progressW}" height="20" rx="3" ry="3" fill="${barColor}" opacity="0.4"/>`;
+        }
+      }
+    }
+  });
+
+  let svgHtml = `<svg id="gantt-svg" width="${SVG_W}" height="${SVG_H}" viewBox="0 0 ${SVG_W} ${SVG_H}" style="min-width:${SVG_W}px;">
+    <rect x="0" y="0" width="${SVG_W}" height="${SVG_H}" fill="#0f172a"/>
+    ${rowsSvg}
+    <!-- Header -->
+    <rect x="0" y="0" width="${SVG_W}" height="${HEADER_H}" fill="#1e293b"/>
+    ${monthLabels.map(m => `
+      <line x1="${m.x}" y1="0" x2="${m.x}" y2="${SVG_H}" stroke="#334155" stroke-width="1" opacity="0.5"/>
+      <text x="${m.x + 4}" y="${HEADER_H/2}" font-size="11" fill="#64748b" dominant-baseline="middle" font-family="system-ui">${m.label}</text>
+    `).join('')}
+    <line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${SVG_H}" stroke="#475569" stroke-width="1"/>
+    <!-- Today marker -->
+    ${showToday ? `
+      <line x1="${todayX}" y1="${HEADER_H}" x2="${todayX}" y2="${SVG_H}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="${todayX + 3}" y="${HEADER_H - 6}" font-size="10" fill="#ef4444" font-family="system-ui">Today</text>
+    ` : ''}
+  </svg>`;
+
+  return dateControls + `
+    <div class="gantt-container" style="overflow-x:auto;">
+      ${svgHtml}
+    </div>
+    <div style="margin-top:12px;display:flex;gap:16px;font-size:12px;color:var(--text-3);">
+      <span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:2px;background:var(--l1);display:inline-block;"></span>L1 Initiative</span>
+      <span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:2px;background:var(--l2);display:inline-block;"></span>L2 Initiative</span>
+      <span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:12px;border-radius:2px;background:var(--l3);display:inline-block;"></span>L3 Initiative</span>
+      <span style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:2px;background:var(--red);display:inline-block;"></span>Today</span>
+    </div>
+  `;
+};
+
+// Sync & Export view
+Views.sync = function() {
+  const myId = PeerSync.getMyId();
+  return `
+    <div style="max-width:600px;">
+      <div class="sync-section">
+        <div class="sync-section-title">${ICONS.sync} My Peer ID</div>
+        <div style="color:var(--text-3);font-size:13px;margin-bottom:10px;">Share this ID with others so they can connect to you. Click to copy.</div>
+        <div class="peer-id-box" onclick="App.copyPeerId()" id="my-peer-id-box">
+          ${ICONS.copy}
+          <span id="my-peer-id">${myId || 'Loading…'}</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="sync-section">
+        <div class="sync-section-title">Connect to Peer</div>
+        <div style="color:var(--text-3);font-size:13px;margin-bottom:10px;">Enter a peer ID to connect and sync data in real-time.</div>
+        <div class="connect-row">
+          <input type="text" class="form-input" id="connect-peer-input" placeholder="Enter peer ID (e.g. dbd-abc123)" style="font-family:monospace;">
+          <button class="btn btn-primary" onclick="App.connectToPeer()">Connect</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="sync-section">
+        <div class="sync-section-title">Connected Peers</div>
+        <div id="peers-list"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="sync-section">
+        <div class="sync-section-title">${ICONS.download} Export / Import</div>
+        <div style="color:var(--text-3);font-size:13px;margin-bottom:12px;">Export all data as JSON or import from a previously exported file.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="App.exportJSON()">${ICONS.download} Export JSON</button>
+          <button class="btn btn-secondary" onclick="App.triggerImport()">${ICONS.upload} Import JSON</button>
+          <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="App.importJSON(event)">
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+// ─── Modals / Forms ──────────────────────────────────────────────────────────
+const Modals = {};
+
+Modals.initiative = function(item = {}) {
+  const s = State.get();
+  const isEdit = !!item.id;
+  const parents = s.initiatives;
+
+  Modal.open(`
+    <div class="form-row">
+      <label class="form-label">Name *</label>
+      <input class="form-input" id="m-ini-name" type="text" value="${item.name || ''}" placeholder="Initiative name">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Description</label>
+      <textarea class="form-input" id="m-ini-desc" rows="2" placeholder="Short description">${item.description || ''}</textarea>
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label">Level *</label>
+        <select class="form-input" id="m-ini-level" onchange="Modals.onLevelChange()">
+          <option value="L1" ${item.level==='L1'||!item.level?'selected':''}>L1 – Portfolio</option>
+          <option value="L2" ${item.level==='L2'?'selected':''}>L2 – Program</option>
+          <option value="L3" ${item.level==='L3'?'selected':''}>L3 – Project</option>
+        </select>
+      </div>
+      <div id="m-parent-row">
+        <label class="form-label">Parent</label>
+        <select class="form-input" id="m-ini-parent">
+          <option value="">— None —</option>
+          ${parents.filter(p => p.id !== item.id).map(p => `<option value="${p.id}" ${item.parentId===p.id?'selected':''}>[${p.level}] ${p.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label">Start Date *</label>
+        <input class="form-input" id="m-ini-start" type="date" value="${item.startDate || ''}">
+      </div>
+      <div>
+        <label class="form-label">End Date *</label>
+        <input class="form-input" id="m-ini-end" type="date" value="${item.endDate || ''}">
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label">Status</label>
+        <select class="form-input" id="m-ini-status">
+          <option value="planning" ${item.status==='planning'||!item.status?'selected':''}>Planning</option>
+          <option value="active" ${item.status==='active'?'selected':''}>Active</option>
+          <option value="completed" ${item.status==='completed'?'selected':''}>Completed</option>
+          <option value="on-hold" ${item.status==='on-hold'?'selected':''}>On Hold</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Color</label>
+        <input class="form-input" id="m-ini-color" type="color" value="${item.color || '#3b82f6'}" style="height:40px;cursor:pointer;">
+      </div>
+    </div>
+  `, isEdit ? 'Edit Initiative' : 'New Initiative');
+
+  Modal.addFooter(`
+    <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+    <button class="btn btn-primary" onclick="Modals.saveInitiative('${item.id || ''}')">${isEdit ? 'Save Changes' : 'Create Initiative'}</button>
+  `);
+
+  window.Modals.onLevelChange = function() {};
+};
+
+Modals.saveInitiative = async function(id) {
+  const name = document.getElementById('m-ini-name').value.trim();
+  const level = document.getElementById('m-ini-level').value;
+  const start = document.getElementById('m-ini-start').value;
+  const end = document.getElementById('m-ini-end').value;
+  if (!name) { Toast.show('Name is required', 'error'); return; }
+  if (!start) { Toast.show('Start date is required', 'error'); return; }
+  if (!end) { Toast.show('End date is required', 'error'); return; }
+  if (start > end) { Toast.show('Start date must be before end date', 'error'); return; }
+
+  const item = {
+    id: id || uuid(),
+    name,
+    description: document.getElementById('m-ini-desc').value.trim(),
+    level,
+    parentId: document.getElementById('m-ini-parent').value || null,
+    startDate: start,
+    endDate: end,
+    status: document.getElementById('m-ini-status').value,
+    color: document.getElementById('m-ini-color').value,
+  };
+
+  const saved = await State.saveInitiative(item);
+  Modal.close();
+  PeerSync.broadcastChange({ initiatives: [saved] });
+  Toast.show(id ? 'Initiative updated' : 'Initiative created', 'success');
+  App.refreshView();
+};
+
+Modals.engineer = function(item = {}) {
+  const isEdit = !!item.id;
+  Modal.open(`
+    <div class="form-row">
+      <label class="form-label">Name *</label>
+      <input class="form-input" id="m-eng-name" type="text" value="${item.name || ''}" placeholder="Full name">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="m-eng-email" type="email" value="${item.email || ''}" placeholder="email@company.com">
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label">Role</label>
+        <input class="form-input" id="m-eng-role" type="text" value="${item.role || ''}" placeholder="e.g. Senior Engineer">
+      </div>
+      <div>
+        <label class="form-label">Team</label>
+        <input class="form-input" id="m-eng-team" type="text" value="${item.team || ''}" placeholder="e.g. Platform">
+      </div>
+    </div>
+  `, isEdit ? 'Edit Engineer' : 'Add Engineer');
+
+  Modal.addFooter(`
+    <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+    <button class="btn btn-primary" onclick="Modals.saveEngineer('${item.id || ''}')">${isEdit ? 'Save Changes' : 'Add Engineer'}</button>
+  `);
+};
+
+Modals.saveEngineer = async function(id) {
+  const name = document.getElementById('m-eng-name').value.trim();
+  if (!name) { Toast.show('Name is required', 'error'); return; }
+
+  const item = {
+    id: id || uuid(),
+    name,
+    email: document.getElementById('m-eng-email').value.trim(),
+    role: document.getElementById('m-eng-role').value.trim(),
+    team: document.getElementById('m-eng-team').value.trim(),
+  };
+
+  const saved = await State.saveEngineer(item);
+  Modal.close();
+  PeerSync.broadcastChange({ engineers: [saved] });
+  Toast.show(id ? 'Engineer updated' : 'Engineer added', 'success');
+  App.refreshView();
+};
+
+Modals.allocation = function(item = {}) {
+  const s = State.get();
+  const isEdit = !!item.id;
+  Modal.open(`
+    <div class="form-row">
+      <label class="form-label">Engineer *</label>
+      <select class="form-input" id="m-alloc-eng">
+        <option value="">Select engineer…</option>
+        ${s.engineers.map(e => `<option value="${e.id}" ${item.engineerId===e.id?'selected':''}>${e.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Initiative *</label>
+      <select class="form-input" id="m-alloc-ini">
+        <option value="">Select initiative…</option>
+        ${s.initiatives.map(i => `<option value="${i.id}" ${item.initiativeId===i.id?'selected':''}>[${i.level}] ${i.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label">Start Date *</label>
+        <input class="form-input" id="m-alloc-start" type="date" value="${item.startDate || ''}">
+      </div>
+      <div>
+        <label class="form-label">End Date *</label>
+        <input class="form-input" id="m-alloc-end" type="date" value="${item.endDate || ''}">
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label">Percentage (%) *</label>
+        <input class="form-input" id="m-alloc-pct" type="number" min="1" max="100" value="${item.percentage || 50}" placeholder="0-100">
+      </div>
+      <div>
+        <label class="form-label">Role</label>
+        <input class="form-input" id="m-alloc-role" type="text" value="${item.role || ''}" placeholder="e.g. Tech Lead">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Notes</label>
+      <textarea class="form-input" id="m-alloc-notes" rows="2" placeholder="Optional notes">${item.notes || ''}</textarea>
+    </div>
+  `, isEdit ? 'Edit Allocation' : 'New Allocation');
+
+  Modal.addFooter(`
+    <button class="btn btn-secondary" onclick="Modal.close()">Cancel</button>
+    <button class="btn btn-primary" onclick="Modals.saveAllocation('${item.id || ''}')">${isEdit ? 'Save Changes' : 'Create Allocation'}</button>
+  `);
+};
+
+Modals.saveAllocation = async function(id) {
+  const engineerId = document.getElementById('m-alloc-eng').value;
+  const initiativeId = document.getElementById('m-alloc-ini').value;
+  const start = document.getElementById('m-alloc-start').value;
+  const end = document.getElementById('m-alloc-end').value;
+  const pct = parseInt(document.getElementById('m-alloc-pct').value);
+
+  if (!engineerId) { Toast.show('Engineer is required', 'error'); return; }
+  if (!initiativeId) { Toast.show('Initiative is required', 'error'); return; }
+  if (!start) { Toast.show('Start date is required', 'error'); return; }
+  if (!end) { Toast.show('End date is required', 'error'); return; }
+  if (start > end) { Toast.show('Start date must be before end date', 'error'); return; }
+  if (isNaN(pct) || pct < 1 || pct > 100) { Toast.show('Percentage must be 1-100', 'error'); return; }
+
+  const item = {
+    id: id || uuid(),
+    engineerId,
+    initiativeId,
+    startDate: start,
+    endDate: end,
+    percentage: pct,
+    role: document.getElementById('m-alloc-role').value.trim(),
+    notes: document.getElementById('m-alloc-notes').value.trim(),
+  };
+
+  const saved = await State.saveAllocation(item);
+  Modal.close();
+  PeerSync.broadcastChange({ allocations: [saved] });
+  Toast.show(id ? 'Allocation updated' : 'Allocation created', 'success');
+  App.refreshView();
+};
+
+Modals.confirmDelete = function(message) {
+  return new Promise(resolve => {
+    Modal.open(`<p style="color:var(--text-2);line-height:1.6;">${message}</p>`, 'Confirm Delete');
+    const footer = Modal.addFooter(`
+      <button class="btn btn-secondary" id="del-cancel">Cancel</button>
+      <button class="btn btn-danger" id="del-confirm">Delete</button>
+    `);
+    footer.querySelector('#del-cancel').onclick = () => { Modal.close(); resolve(false); };
+    footer.querySelector('#del-confirm').onclick = () => { Modal.close(); resolve(true); };
+  });
+};
+
+// ─── App (Controller) ─────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { separator: 'Manage' },
+  { id: 'initiatives', label: 'Initiatives', icon: 'initiatives' },
+  { id: 'engineers', label: 'Engineers', icon: 'engineers' },
+  { id: 'allocations', label: 'Allocations', icon: 'allocations' },
+  { separator: 'Planning' },
+  { id: 'tracker', label: 'Tracker', icon: 'tracker' },
+  { separator: 'Settings' },
+  { id: 'sync', label: 'Sync & Export', icon: 'sync' },
+];
+
+const App = (() => {
+  let currentView = 'dashboard';
+  let viewState = {};
+  let ganttRange = {};
+
+  function buildNav() {
+    const nav = document.getElementById('sidebar-nav');
+    nav.innerHTML = NAV_ITEMS.map(item => {
+      if (item.separator) return `<div class="nav-section-label">${item.separator}</div>`;
+      return `
+        <div class="nav-item ${item.id === currentView ? 'active' : ''}" onclick="App.navigate('${item.id}')" data-view="${item.id}">
+          ${ICONS[item.icon] || ''}
+          <span>${item.label}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function setHeader(title, actionsHtml = '') {
+    document.getElementById('header-title').textContent = title;
+    document.getElementById('header-actions').innerHTML = actionsHtml;
+  }
+
+  function renderView() {
+    const content = document.getElementById('content');
+    buildNav();
+
+    switch (currentView) {
+      case 'dashboard':
+        setHeader('Dashboard');
+        content.innerHTML = Views.dashboard();
+        break;
+
+      case 'initiatives':
+        setHeader('Initiatives', `
+          <button class="btn btn-primary" onclick="App.newInitiative()">${ICONS.plus} New Initiative</button>
+        `);
+        content.innerHTML = Views.initiatives(viewState.initiativeFilters || {});
+        break;
+
+      case 'engineers':
+        setHeader('Engineers', `
+          <button class="btn btn-primary" onclick="App.newEngineer()">${ICONS.plus} Add Engineer</button>
+        `);
+        content.innerHTML = Views.engineers();
+        break;
+
+      case 'allocations':
+        setHeader('Allocations', `
+          <button class="btn btn-primary" onclick="App.newAllocation()">${ICONS.plus} New Allocation</button>
+        `);
+        content.innerHTML = Views.allocations(viewState.allocationFilters || {});
+        break;
+
+      case 'tracker':
+        setHeader('Tracker (Gantt)');
+        content.innerHTML = Views.tracker(ganttRange);
+        break;
+
+      case 'sync':
+        setHeader('Sync & Export');
+        content.innerHTML = Views.sync();
+        setTimeout(() => PeerSync.renderPeersList(), 0);
+        break;
+    }
+  }
+
+  function navigate(view) {
+    currentView = view;
+    renderView();
+  }
+
+  function refreshView() {
+    renderView();
+  }
+
+  // Initiative actions
+  function newInitiative() { Modals.initiative(); }
+  function editInitiative(id) {
+    const item = State.getInitiatives().find(i => i.id === id);
+    if (item) Modals.initiative(item);
+  }
+  async function deleteInitiative(id) {
+    const item = State.getInitiatives().find(i => i.id === id);
+    if (!item) return;
+    const ok = await Modals.confirmDelete(`Delete initiative "<strong>${item.name}</strong>"? All child initiatives and allocations will also be removed.`);
+    if (!ok) return;
+    await State.deleteInitiative(id);
+    Toast.show('Initiative deleted', 'info');
+    PeerSync.broadcastChange({ initiatives: State.getInitiatives() });
+    refreshView();
+  }
+
+  function filterInitiatives() {
+    viewState.initiativeFilters = {
+      search: document.getElementById('ini-search')?.value || '',
+      level: document.getElementById('ini-level-filter')?.value || '',
+      status: document.getElementById('ini-status-filter')?.value || '',
+    };
+    const content = document.getElementById('content');
+    content.innerHTML = Views.initiatives(viewState.initiativeFilters);
+  }
+
+  // Engineer actions
+  function newEngineer() { Modals.engineer(); }
+  function editEngineer(id) {
+    const item = State.getEngineers().find(e => e.id === id);
+    if (item) Modals.engineer(item);
+  }
+  async function deleteEngineer(id) {
+    const item = State.getEngineers().find(e => e.id === id);
+    if (!item) return;
+    const ok = await Modals.confirmDelete(`Delete engineer "<strong>${item.name}</strong>"? Their allocations will also be removed.`);
+    if (!ok) return;
+    await State.deleteEngineer(id);
+    Toast.show('Engineer deleted', 'info');
+    PeerSync.broadcastChange({ engineers: State.getEngineers() });
+    refreshView();
+  }
+
+  // Allocation actions
+  function newAllocation() { Modals.allocation(); }
+  function editAllocation(id) {
+    const item = State.getAllocations().find(a => a.id === id);
+    if (item) Modals.allocation(item);
+  }
+  async function deleteAllocation(id) {
+    const ok = await Modals.confirmDelete('Delete this allocation?');
+    if (!ok) return;
+    await State.deleteAllocation(id);
+    Toast.show('Allocation deleted', 'info');
+    PeerSync.broadcastChange({ allocations: State.getAllocations() });
+    refreshView();
+  }
+
+  function filterAllocations() {
+    viewState.allocationFilters = {
+      engineerId: document.getElementById('alloc-eng-filter')?.value || '',
+      initiativeId: document.getElementById('alloc-ini-filter')?.value || '',
+    };
+    const content = document.getElementById('content');
+    content.innerHTML = Views.allocations(viewState.allocationFilters);
+  }
+
+  // Gantt
+  function updateGantt() {
+    ganttRange = {
+      start: document.getElementById('gantt-start')?.value,
+      end: document.getElementById('gantt-end')?.value,
+    };
+    const content = document.getElementById('content');
+    content.innerHTML = Views.tracker(ganttRange);
+  }
+
+  function resetGanttRange() {
+    ganttRange = {};
+    const content = document.getElementById('content');
+    content.innerHTML = Views.tracker(ganttRange);
+  }
+
+  // Sync
+  function copyPeerId() {
+    const id = PeerSync.getMyId();
+    if (!id) return;
+    navigator.clipboard.writeText(id).then(() => Toast.show('Peer ID copied!', 'success'));
+  }
+
+  function connectToPeer() {
+    const input = document.getElementById('connect-peer-input');
+    const peerId = input?.value.trim();
+    if (!peerId) { Toast.show('Enter a peer ID', 'error'); return; }
+    PeerSync.connectTo(peerId);
+    if (input) input.value = '';
+    setTimeout(() => PeerSync.renderPeersList(), 800);
+  }
+
+  // Export
+  function exportJSON() {
+    const s = State.get();
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      initiatives: s.initiatives,
+      engineers: s.engineers,
+      allocations: s.allocations,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `daybyday-export-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    Toast.show('Data exported', 'success');
+  }
+
+  function triggerImport() {
+    document.getElementById('import-file-input')?.click();
+  }
+
+  async function importJSON(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      await State.mergeData(data);
+      PeerSync.broadcastChange(State.get());
+      Toast.show('Data imported successfully', 'success');
+      refreshView();
+    } catch (err) {
+      Toast.show('Failed to import: ' + err.message, 'error');
+    }
+    e.target.value = '';
+  }
+
+  return {
+    navigate, refreshView, renderView, buildNav,
+    newInitiative, editInitiative, deleteInitiative, filterInitiatives,
+    newEngineer, editEngineer, deleteEngineer,
+    newAllocation, editAllocation, deleteAllocation, filterAllocations,
+    updateGantt, resetGanttRange,
+    copyPeerId, connectToPeer,
+    exportJSON, triggerImport, importJSON,
+  };
+})();
+
+// Expose globals for inline event handlers
+window.App = App;
+window.Modal = Modal;
+window.Modals = Modals;
+window.Toast = Toast;
+
+// Tree toggle
+window.toggleTree = function(id) {
+  const el = document.getElementById(id);
+  const toggle = document.getElementById('toggle-' + id);
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (toggle) toggle.classList.toggle('open', !isOpen);
+};
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+async function boot() {
+  await DB.open();
+  await seedData();
+  await State.load();
+  App.renderView();
+  PeerSync.init();
+}
+
+boot().catch(err => {
+  console.error('Boot failed:', err);
+  document.getElementById('content').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state-text" style="color:var(--red);">Failed to start DayByDay</div>
+      <div class="empty-state-sub">${err.message}</div>
+    </div>
+  `;
+});
+
+})();
+</script>
+</body>
+</html>
