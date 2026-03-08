@@ -458,6 +458,139 @@ input, select, textarea { font-family: inherit; font-size: 14px; outline: none; 
 /* Grid 2 */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* ─── Mobile ──────────────────────────────────────────────── */
+#hamburger {
+  display: none;
+  background: transparent;
+  color: var(--text-3);
+  padding: 6px;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#hamburger:hover { background: var(--bg-3); color: var(--text-1); }
+
+#sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 800;
+}
+#sidebar-overlay.open { display: block; }
+
+#mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg-1);
+  border-top: 1px solid var(--border);
+  z-index: 900;
+  padding: 4px 0 max(4px, env(safe-area-inset-bottom, 4px));
+}
+#mobile-nav-inner { display: flex; }
+.mobile-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  background: transparent;
+  color: var(--text-4);
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+.mobile-nav-btn svg { width: 20px; height: 20px; }
+.mobile-nav-btn span { font-size: 9px; font-weight: 500; }
+.mobile-nav-btn.active { color: var(--blue-light); }
+
+@media (max-width: 768px) {
+  /* Sidebar becomes a slide-in drawer */
+  #sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 850;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    width: 240px;
+    min-width: 240px;
+  }
+  #sidebar.open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0,0,0,0.5);
+  }
+
+  #hamburger { display: flex; }
+  #mobile-nav { display: block; }
+
+  /* Content */
+  #content { padding: 16px 12px 84px; }
+  #header { padding: 0 12px; height: 52px; }
+  #header-title { font-size: 15px; }
+
+  /* Stats: 2-column */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 22px; }
+
+  /* Engineer grid: 1 col */
+  .eng-grid { grid-template-columns: 1fr; }
+
+  /* Allocation items: wrap */
+  .alloc-item { flex-wrap: wrap; gap: 8px; }
+  .alloc-eng { min-width: unset; width: 100%; font-size: 13px; }
+  .alloc-init { min-width: unset; flex: 1; font-size: 13px; }
+  .alloc-dates { min-width: unset; font-size: 11px; }
+  .alloc-pct { min-width: unset; }
+  .alloc-actions { margin-left: 0; }
+
+  /* Filters */
+  .filter-bar { gap: 6px; }
+  .search-input { min-width: 100px; flex: 1; }
+
+  /* Forms */
+  .form-row-2 { grid-template-columns: 1fr; gap: 0; }
+
+  /* Modal: bottom sheet */
+  #modal-overlay { padding: 0; align-items: flex-end; }
+  #modal-box {
+    border-radius: 16px 16px 0 0;
+    max-height: 92vh;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Toast: centered above bottom nav */
+  #toast-container {
+    right: 50%;
+    left: auto;
+    transform: translateX(50%);
+    bottom: 80px;
+    align-items: center;
+  }
+  .toast { min-width: 260px; }
+
+  /* Layout */
+  .section-header { flex-wrap: wrap; gap: 8px; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .tree-item-meta { flex-wrap: wrap; gap: 4px; }
+  .date-controls { gap: 6px; }
+  .connect-row { flex-direction: column; }
+  .sync-section { margin-bottom: 20px; }
+}
+
+@media (max-width: 380px) {
+  .stats-grid { gap: 8px; }
+  .stat-value { font-size: 19px; }
+  #content { padding: 12px 8px 84px; }
+}
 </style>
 </head>
 <body>
@@ -485,11 +618,22 @@ input, select, textarea { font-family: inherit; font-size: 14px; outline: none; 
   </nav>
   <div id="main">
     <div id="header">
-      <div id="header-title">Dashboard</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div id="header-title">Dashboard</div>
+      </div>
       <div id="header-actions"></div>
     </div>
     <div id="content"></div>
   </div>
+</div>
+<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div id="mobile-nav">
+  <div id="mobile-nav-inner"></div>
 </div>
 <div id="modal-overlay" class="hidden">
   <div id="modal-box"></div>
@@ -1811,6 +1955,20 @@ const App = (() => {
         </div>
       `;
     }).join('');
+
+    // Mobile bottom nav (only navigable items, no separators)
+    const mobileNav = document.getElementById('mobile-nav-inner');
+    if (mobileNav) {
+      const MOBILE_LABELS = { dashboard:'Home', initiatives:'Epics', engineers:'Team', allocations:'Allocs', tracker:'Gantt', sync:'Sync' };
+      mobileNav.innerHTML = NAV_ITEMS
+        .filter(i => !i.separator)
+        .map(item => `
+          <button class="mobile-nav-btn ${item.id === currentView ? 'active' : ''}" onclick="App.navigate('${item.id}')">
+            ${ICONS[item.icon] || ''}
+            <span>${MOBILE_LABELS[item.id] || item.label}</span>
+          </button>
+        `).join('');
+    }
   }
 
   function setHeader(title, actionsHtml = '') {
@@ -1864,6 +2022,11 @@ const App = (() => {
 
   function navigate(view) {
     currentView = view;
+    // Close sidebar drawer on mobile after navigating
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
     renderView();
   }
 
@@ -2036,6 +2199,14 @@ window.toggleTree = function(id) {
   const isOpen = el.style.display !== 'none';
   el.style.display = isOpen ? 'none' : 'block';
   if (toggle) toggle.classList.toggle('open', !isOpen);
+};
+
+// ─── Sidebar toggle (mobile) ──────────────────────────────────────────────────
+window.toggleSidebar = function() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isOpen = sidebar.classList.toggle('open');
+  overlay.classList.toggle('open', isOpen);
 };
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
